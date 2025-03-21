@@ -3,7 +3,7 @@ pipeline {
     
     parameters {
         string(name: 'STACK_NAME', defaultValue: 'prometheus-exporters-stack', description: 'Name of the CloudFormation stack')
-        string(name: 'TEMPLATE_PATH', defaultValue: 'jenkins_machin.yaml', description: 'Path to the CloudFormation template file')
+        string(name: 'TEMPLATE_PATH', defaultValue: 'jenkins_machin.yml', description: 'Path to the CloudFormation template file')
         string(name: 'AWS_REGION', defaultValue: 'us-east-1', description: 'AWS Region to deploy the stack')
     }
     
