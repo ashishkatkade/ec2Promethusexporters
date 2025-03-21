@@ -1,0 +1,52 @@
+Description: This template is to create EC2 instance, which install node and push gateway exporter for prometheus dashboard
+Resources:
+  PrometheusExporterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for Prometheus exporters"
+      VpcId: vpc-0bc0de7d394ad3b07
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 9100
+          ToPort: 9100
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 9091
+          ToPort: 9091
+          CidrIp: 0.0.0.0/0
+        
+  FirstEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-08b5b3a93ed654d19
+      InstanceType: t2.micro
+      KeyName: appkey
+      SecurityGroupIds:
+        - !Ref PrometheusExporterSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y docker
+          systemctl enable docker
+          systemctl start docker
+
+          # Run Node Exporter
+          docker run -d -p 9100:9100 --name node-exporter prom/node-exporter
+
+          # Run Pushgateway
+          docker run -d -p 9091:9091 --name pushgateway prom/pushgateway
+
+      
+Outputs:
+  InstanceIPfirstec2:
+    Description: InstanceID of EC2
+    Value: !Ref FirstEC2
+  PublicIPfirstec2:
+    Description: Public IP of EC2
+    Value: !GetAtt FirstEC2.PublicIp
+  
