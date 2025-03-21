@@ -19,7 +19,7 @@ pipeline {
                 script {
                     sh """
                     aws cloudformation validate-template \
-                        --template-body file://${params.TEMPLATE_PATH} \
+                        --template-body file:///${params.TEMPLATE_PATH} \
                         --region ${params.AWS_REGION}
                     """
                 }
