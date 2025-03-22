@@ -88,7 +88,6 @@ pipeline {
                         if (stackExists) {
                             echo "Waiting for stack operation to complete..."
                             sh """
-                                aws cloudformation wait stack-update-complete --stack-name ${params.STACK_NAME} --region ${params.AWS_REGION} || \
                                 aws cloudformation wait stack-create-complete --stack-name ${params.STACK_NAME} --region ${params.AWS_REGION}
                             """
                         }
