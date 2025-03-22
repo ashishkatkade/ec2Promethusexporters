@@ -16,42 +16,56 @@ pipeline {
         
         stage('Validate Template') {
             steps {
-                script {
-                    sh """
-                    aws cloudformation validate-template \
-                        --template-body file://./${params.TEMPLATE_PATH} \
-                        --region ${params.AWS_REGION}
-                    """
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: '0e35c7a6-f4a7-470d-88e6-b06b87522140',  // Replace with your Jenkins credentials ID
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    script {
+                        sh """
+                            aws cloudformation validate-template \
+                                --template-body file://./${params.TEMPLATE_PATH} \
+                                --region ${params.AWS_REGION}
+                        """
+                    }
                 }
             }
         }
         
         stage('Deploy Stack') {
             steps {
-                script {
-                    def stackExists = sh(
-                        script: "aws cloudformation describe-stacks --stack-name ${params.STACK_NAME} --region ${params.AWS_REGION} 2>&1 || echo 'STACK_NOT_FOUND'",
-                        returnStdout: true
-                    ).contains('STACK_NOT_FOUND') ? false : true
-                    
-                    if (stackExists) {
-                        echo "Stack ${params.STACK_NAME} exists. Updating..."
-                        sh """
-                            aws cloudformation update-stack \
-                                --stack-name ${params.STACK_NAME} \
-                                --template-body file://${params.TEMPLATE_PATH} \
-                                --region ${params.AWS_REGION} \
-                                --capabilities CAPABILITY_IAM || echo 'No updates are to be performed'
-                        """
-                    } else {
-                        echo "Stack ${params.STACK_NAME} does not exist. Creating..."
-                        sh """
-                            aws cloudformation create-stack \
-                                --stack-name ${params.STACK_NAME} \
-                                --template-body file://${params.TEMPLATE_PATH} \
-                                --region ${params.AWS_REGION} \
-                                --capabilities CAPABILITY_IAM
-                        """
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: '0e35c7a6-f4a7-470d-88e6-b06b87522140',  // Replace with your Jenkins credentials ID
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    script {
+                        def stackExists = sh(
+                            script: "aws cloudformation describe-stacks --stack-name ${params.STACK_NAME} --region ${params.AWS_REGION} 2>&1 || echo 'STACK_NOT_FOUND'",
+                            returnStdout: true
+                        ).contains('STACK_NOT_FOUND') ? false : true
+                        
+                        if (stackExists) {
+                            echo "Stack ${params.STACK_NAME} exists. Updating..."
+                            sh """
+                                aws cloudformation update-stack \
+                                    --stack-name ${params.STACK_NAME} \
+                                    --template-body file://${params.TEMPLATE_PATH} \
+                                    --region ${params.AWS_REGION} \
+                                    --capabilities CAPABILITY_IAM || echo 'No updates are to be performed'
+                            """
+                        } else {
+                            echo "Stack ${params.STACK_NAME} does not exist. Creating..."
+                            sh """
+                                aws cloudformation create-stack \
+                                    --stack-name ${params.STACK_NAME} \
+                                    --template-body file://${params.TEMPLATE_PATH} \
+                                    --region ${params.AWS_REGION} \
+                                    --capabilities CAPABILITY_IAM
+                            """
+                        }
                     }
                 }
             }
@@ -59,18 +73,25 @@ pipeline {
         
         stage('Wait for Stack Completion') {
             steps {
-                script {
-                    def stackExists = sh(
-                        script: "aws cloudformation describe-stacks --stack-name ${params.STACK_NAME} --region ${params.AWS_REGION} 2>&1 || echo 'STACK_NOT_FOUND'",
-                        returnStdout: true
-                    ).contains('STACK_NOT_FOUND') ? false : true
-                    
-                    if (stackExists) {
-                        echo "Waiting for stack operation to complete..."
-                        sh """
-                            aws cloudformation wait stack-update-complete --stack-name ${params.STACK_NAME} --region ${params.AWS_REGION} || \
-                            aws cloudformation wait stack-create-complete --stack-name ${params.STACK_NAME} --region ${params.AWS_REGION}
-                        """
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: '0e35c7a6-f4a7-470d-88e6-b06b87522140',  // Replace with your Jenkins credentials ID
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    script {
+                        def stackExists = sh(
+                            script: "aws cloudformation describe-stacks --stack-name ${params.STACK_NAME} --region ${params.AWS_REGION} 2>&1 || echo 'STACK_NOT_FOUND'",
+                            returnStdout: true
+                        ).contains('STACK_NOT_FOUND') ? false : true
+                        
+                        if (stackExists) {
+                            echo "Waiting for stack operation to complete..."
+                            sh """
+                                aws cloudformation wait stack-update-complete --stack-name ${params.STACK_NAME} --region ${params.AWS_REGION} || \
+                                aws cloudformation wait stack-create-complete --stack-name ${params.STACK_NAME} --region ${params.AWS_REGION}
+                            """
+                        }
                     }
                 }
             }
@@ -78,15 +99,22 @@ pipeline {
         
         stage('Get Stack Outputs') {
             steps {
-                script {
-                    echo "Getting stack outputs..."
-                    sh """
-                        aws cloudformation describe-stacks \
-                            --stack-name ${params.STACK_NAME} \
-                            --query 'Stacks[0].Outputs' \
-                            --region ${params.AWS_REGION} \
-                            --output table
-                    """
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: '0e35c7a6-f4a7-470d-88e6-b06b87522140',  // Replace with your Jenkins credentials ID
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    script {
+                        echo "Getting stack outputs..."
+                        sh """
+                            aws cloudformation describe-stacks \
+                                --stack-name ${params.STACK_NAME} \
+                                --query 'Stacks[0].Outputs' \
+                                --region ${params.AWS_REGION} \
+                                --output table
+                        """
+                    }
                 }
             }
         }
@@ -101,4 +129,3 @@ pipeline {
         }
     }
 }
-
